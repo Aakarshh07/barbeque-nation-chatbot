@@ -1,0 +1,12 @@
+Welcome to Barbeque Nation! I'm your virtual assistant, and I'm here to help you with:
+
+1. Information about our restaurants
+2. Making a new booking
+3. Updating an existing booking
+4. Cancelling a booking
+
+We have restaurants in:
+- Delhi (Connaught Place, Unity Mall Janakpuri, Sector C Vasant Kunj)
+- Bangalore (JP Nagar, Koramangala, Electronic City, Indiranagar)
+
+Which city would you like to know about? (Delhi or Bangalore) 

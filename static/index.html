@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barbeque Nation Chatbot</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .chat-container {
+            height: calc(100vh - 200px);
+        }
+        .message {
+            max-width: 80%;
+            margin: 8px;
+            padding: 12px;
+            border-radius: 12px;
+        }
+        .user-message {
+            background-color: #e3f2fd;
+            margin-left: auto;
+        }
+        .bot-message {
+            background-color: #f5f5f5;
+            margin-right: auto;
+        }
+        .options-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .option-button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .option-button:hover {
+            background-color: #45a049;
+        }
+        .loading {
+            display: none;
+            margin: 8px;
+            padding: 12px;
+            background-color: #f5f5f5;
+            border-radius: 12px;
+            width: fit-content;
+        }
+        .loading::after {
+            content: "...";
+            animation: dots 1.5s steps(5, end) infinite;
+        }
+        @keyframes dots {
+            0%, 20% { content: "."; }
+            40% { content: ".."; }
+            60% { content: "..."; }
+            80%, 100% { content: ""; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h1 class="text-2xl font-bold text-center mb-4">Barbeque Nation Chatbot</h1>
+            
+            <!-- Chat Messages Container -->
+            <div id="chat-messages" class="chat-container overflow-y-auto mb-4 p-4 bg-gray-50 rounded-lg">
+                <!-- Messages will be added here -->
+            </div>
+
+            <!-- Loading Indicator -->
+            <div id="loading" class="loading">Thinking</div>
+
+            <!-- Options Container -->
+            <div id="options-container" class="options-container mb-4">
+                <!-- Options will be added here -->
+            </div>
+
+            <!-- Input Form -->
+            <form id="chat-form" class="flex gap-2">
+                <input type="text" id="user-input" 
+                       class="flex-1 p-2 border rounded-lg focus:outline-none focus:border-blue-500"
+                       placeholder="Type your message...">
+                <button type="submit" 
+                        class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors">
+                    Send
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let sessionId = 'session_' + Math.random().toString(36).substr(2, 9);
+        let currentState = 'initial_greeting';
+        const API_URL = 'http://localhost:8001';
+
+        // Show loading indicator
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+        }
+
+        // Hide loading indicator
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        // Add message to chat
+        function addMessage(text, sender) {
+            const messagesContainer = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            messageDiv.textContent = text;
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Update options
+        function updateOptions(options) {
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+
+            if (options && options.cities) {
+                options.cities.forEach(city => {
+                    addOptionButton(city, city);
+                });
+            } else if (options && options.restaurants) {
+                options.restaurants.forEach(restaurant => {
+                    addOptionButton(restaurant, restaurant);
+                });
+            } else if (options && options.query_types) {
+                options.query_types.forEach(type => {
+                    addOptionButton(type, type);
+                });
+            } else if (options && options.faqs) {
+                options.faqs.forEach(faq => {
+                    addOptionButton(faq, faq);
+                });
+            } else if (options && options.booking_fields) {
+                options.booking_fields.forEach(field => {
+                    addOptionButton(field, `Please enter your ${field}`);
+                });
+            } else if (options && options.confirmation) {
+                options.confirmation.forEach(option => {
+                    addOptionButton(option, option);
+                });
+            } else if (options && options.locations) {
+                 options.locations.forEach(location => {
+                     addOptionButton(location, location);
+                 });
+                 if (options.next_actions) {
+                     options.next_actions.forEach(action => {
+                         addOptionButton(action, action);
+                     });
+                 }
+            }
+        }
+
+        // Add option button
+        function addOptionButton(text, value) {
+            const optionsContainer = document.getElementById('options-container');
+            const button = document.createElement('button');
+            button.className = 'option-button';
+            button.textContent = text;
+            button.onclick = () => {
+                document.getElementById('user-input').value = value;
+                document.getElementById('chat-form').dispatchEvent(new Event('submit'));
+            };
+            optionsContainer.appendChild(button);
+        }
+
+        // Handle form submission
+        document.getElementById('chat-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const input = document.getElementById('user-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            // Add user message to chat
+            addMessage(message, 'user');
+            input.value = '';
+
+            // Show loading indicator
+            showLoading();
+
+            try {
+                console.log('Sending request to:', `${API_URL}/api/chatbot/chat`, 'with state:', currentState, 'and message:', message);
+                const response = await fetch(`${API_URL}/api/chatbot/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        session_id: sessionId,
+                        current_state: currentState
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('HTTP error! status:', response.status, 'Response text:', errorText);
+                    throw new Error(`HTTP error! status: ${response.status}, details: ${errorText}`);
+                }
+
+                const data = await response.json();
+                console.log('Received response:', data);
+
+                currentState = data.state;
+
+                // Add bot response to chat
+                addMessage(data.response, 'bot');
+
+                // Update options if available
+                updateOptions(data.options);
+            } catch (error) {
+                console.error('Error processing chat message:', error);
+                addMessage('Sorry, there was an error processing your request. Please check the console for details.', 'bot');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // Initialize chat on load by sending an empty message
+        window.onload = () => {
+            console.log('Page loaded, initializing chat...');
+            document.getElementById('user-input').value = '';
+            document.getElementById('chat-form').dispatchEvent(new Event('submit', { cancelable: true }));
+        };
+    </script>
+</body>
+</html> 

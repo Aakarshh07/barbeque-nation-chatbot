@@ -1,0 +1,15 @@
+I'll help you make a booking at {restaurant_name}. Please provide the following information:
+
+1. Date of visit (YYYY-MM-DD format)
+2. Time of visit (HH:MM format)
+3. Number of guests
+4. Contact number
+
+Please note:
+- We accept bookings up to 30 days in advance
+- Minimum booking time is 2 hours
+- Maximum group size is 20 people
+- Cancellations are accepted up to 2 hours before the booking time
+- A confirmation message will be sent to your contact number
+
+Please provide the required information in any format, and I'll help you complete the booking. 
